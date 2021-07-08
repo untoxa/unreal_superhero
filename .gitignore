@@ -1,0 +1,10 @@
+.vscode
+obj
+converter
+tools
+unused 
+*.map
+*.sym
+*.ihx
+*.noi
+*.cdb

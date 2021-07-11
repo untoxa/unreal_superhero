@@ -23,7 +23,8 @@ CSRC = $(foreach dir,src,$(notdir $(wildcard $(dir)/*.c)))
 
 OBJS = $(CSRC:%.c=$(OBJDIR)/%.o) $(ASRC:%.s=$(OBJDIR)/%.o)
 
-all:	directories release $(TARGET)
+all:	directories $(TARGET)
+#all:	directories release $(TARGET)
 
 .PHONY: clean release debug color profile directories
 

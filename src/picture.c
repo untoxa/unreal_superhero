@@ -1,4 +1,4 @@
-#include <gb/incbin.h>
+#include <gbdk/incbin.h>
 
 INCBIN(upper_picture_tiles, "picture/unreal2_upper.til")
 INCBIN(upper_picture_map, "picture/unreal2_upper.map")

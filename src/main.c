@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include <gb/cgb.h>
 #include <gb/isr.h>
-#include <gb/incbin.h>
+#include <gbdk/incbin.h>
 
 #include "hUGEDriver.h"
 #include "queues.h"
@@ -152,14 +152,14 @@ void main(void) {
     set_sprite_palette(0, 8, sprite_palettes);
 
     // load font tiles
-    set_sprite_data(0x20, SIZE(font_tiles) >> 4, font_tiles);
+    set_sprite_data(0x20, INCBIN_SIZE(font_tiles) >> 4, font_tiles);
 
     // load picture tiles and map
-    set_bkg_data(0, SIZE(upper_picture_tiles) >> 4, upper_picture_tiles);
+    set_bkg_data(0, INCBIN_SIZE(upper_picture_tiles) >> 4, upper_picture_tiles);
     set_bkg_tiles(0, 0, 20, 11, upper_picture_map);
     VBK_REG = 1;
     set_bkg_tiles(0, 0, 20, 11, upper_picture_attr);
-    set_bkg_data(0, SIZE(lower_picture_tiles) >> 4, lower_picture_tiles);
+    set_bkg_data(0, INCBIN_SIZE(lower_picture_tiles) >> 4, lower_picture_tiles);
     set_bkg_tiles(0, 11, 20, 10, lower_picture_attr);
     VBK_REG = 0;
     set_bkg_tiles(0, 11, 20, 10, lower_picture_map);

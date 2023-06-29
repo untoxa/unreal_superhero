@@ -1400,4 +1400,4 @@ static const unsigned char waves[] = {
     181,227,77,77,177,104,107,42,177,178,59,177,43,106,177,153,
 };
 
-const hUGESong_t Intro = {7, &order_cnt, order1, order2, order3,order4, duty_instruments, wave_instruments, noise_instruments, NULL, waves};
+const hUGESong_t unreal_superhero2 = {7, &order_cnt, order1, order2, order3,order4, duty_instruments, wave_instruments, noise_instruments, NULL, waves};

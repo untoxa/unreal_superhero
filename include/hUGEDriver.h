@@ -96,8 +96,8 @@ void hUGE_init(const hUGESong_t * song) OLDCALL;
 void hUGE_init_banked(const hUGESong_t * song) BANKED OLDCALL;
 
 // driver routine
-void hUGE_dosound();
-void hUGE_dosound_banked() BANKED;
+void hUGE_dosound(void);
+void hUGE_dosound_banked(void) BANKED;
 
 enum hUGE_channel_t {HT_CH1 = 0, HT_CH2, HT_CH3, HT_CH4};
 enum hUGE_mute_t    {HT_CH_PLAY = 0, HT_CH_MUTE};
@@ -112,7 +112,7 @@ extern volatile unsigned char hUGE_current_wave;
 
 extern volatile unsigned char hUGE_mute_mask;
 
-inline void hUGE_reset_wave() {
+inline void hUGE_reset_wave(void) {
 	hUGE_current_wave = 100;
 }
 

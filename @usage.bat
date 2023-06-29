@@ -1,1 +1,1 @@
-@python .\utils\romusage.py .\build\unreal.gb
+@python .\utils\romusage.py .\build\gbc\unreal.gbc

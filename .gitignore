@@ -3,8 +3,8 @@ obj
 converter
 tools
 unused 
-/build/*.map
-/build/*.sym
-/build/*.ihx
-/build/*.noi
-/build/*.cdb
+/build/**/*.map
+/build/**/*.sym
+/build/**/*.ihx
+/build/**/*.noi
+/build/**/*.cdb

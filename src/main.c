@@ -18,6 +18,7 @@ INCBIN_EXTERN(picture_palette)
 
 INCBIN_EXTERN(font_tiles)
 
+static uint16_t SP_SAVE;
 void load_palettes(void) NAKED {
 __asm
         push af
@@ -25,69 +26,76 @@ __asm
         push bc
         push de
 
-        ldhl sp, #0
-        ld  b, h
-        ld  c, l
+        ld (_SP_SAVE), sp           ; save SP
 
-        ld  de, #_picture_palette  ; load picture palettes address
+        ld de, #_picture_palette    ; load picture palettes address
         ldh a, (_SCY_REG)
+        swap a
         ld l, a
-        ld h, #0
+        and #0x0f
+        ld h, a
+        ld a, #0xf0
+        and l
+        ld l, a
         add hl, hl
-        add hl, hl
-        add hl, hl
-        add hl, hl
-        add hl, hl
-        add hl, de                 ; offset address by SCY * (4 * 4 * 2)
-        ld  sp, hl
+        add hl, de                  ; offset address by SCY * (4 * 4 * 2)
+        ld sp, hl
 
-        rra
-        ld  a, #0x80               ; auto-increment, start from 0
-        jr  nc, 0$
-        set 5, a                   ; auto-increment start from 4-th palette; offset == 32
-0$:
+        rlca                        ; compensate odd/even line
+        and #0x20                   ; if odd then start from 4-th palette; offset == 32
+        or  #0x80                   ; set auto-increment
 
-        ld  hl,#_BCPS_REG
-        ld  (hl+), a
+        ld hl,#_BCPS_REG
+        ld (hl+), a
 
-        .rept (8*4)             ; read and set the the colors that come from previous lines
+        .rept (8*4)                 ; read and set the the colors that come from previous lines
             pop de
             ld (hl), e
             ld (hl), d
         .endm
 
-        ld  a, l
-        ld  l, #<_STAT_REG
-2$:     bit 1, (hl)
-        jr  z, 2$
-        ld  l, a
+2$:     ldh a, (_STAT_REG)
+        and #STATF_BUSY
+        jr z, 2$                    ; wait for mode 3
+
+        ld a, #STATF_MODE00
+        ld (_STAT_REG), a
+        xor a
+        ld (_IF_REG), a
 
 4$:
-        pop de                  ; read first color of the first palette
+        pop de                      ; preload the first two colors
+        pop bc
 
-        ld  a, l
-        ld  l, #<_STAT_REG
-3$:
-        bit 1, (hl)
-        jr  nz, 3$
-        ld  l, a
+        xor a
+        ld (_IF_REG), a
+        halt                        ; wait for mode 0
 
-        ld (hl), e              ; set the first color
+        ld (hl), e                  ; set the first two colors
         ld (hl), d
+        ld (hl), c
+        ld (hl), b
 
-        .rept (4*4)-1
-            pop de              ; read and set the rest of the colors
+        .rept (4*4)-2
+            pop de                  ; read and set the rest of the colors
             ld (hl), e
             ld (hl), d
         .endm
 
         ldh a, (_LY_REG)
-        cp  #143
-        jr  c, 4$
+        cp #143
+        jr c, 4$                    ; load the next 4 palettes
 
-        ld  h, b
-        ld  l, c
-        ld  sp, hl
+        ld a, #STATF_LYC
+        ld (_STAT_REG), a
+        xor a
+        ld (_IF_REG), a
+
+        ld hl, #_SP_SAVE            ; restore SP
+        ld a, (hl+)
+        ld h, (hl)
+        ld l, a
+        ld sp, hl
 
         pop de
         pop bc

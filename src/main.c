@@ -46,7 +46,7 @@ __asm
         or  #0x80                   ; set auto-increment
 
         ld hl,#_BCPS_REG
-        ld (hl+), a
+        ld (hl+), a                 ; HL now points to BCPD
 
         .rept (8*4)                 ; read and set the the colors that come from previous lines
             pop de
@@ -54,16 +54,17 @@ __asm
             ld (hl), d
         .endm
 
-2$:     ldh a, (_STAT_REG)
+0$:
+        ldh a, (_STAT_REG)
         and #STATF_BUSY
-        jr z, 2$                    ; wait for mode 3
+        jr z, 0$                    ; wait for mode 3
 
         ld a, #STATF_MODE00
         ld (_STAT_REG), a
         xor a
         ld (_IF_REG), a
 
-4$:
+1$:
         pop de                      ; preload the first two colors
         pop bc
 
@@ -84,7 +85,7 @@ __asm
 
         ldh a, (_LY_REG)
         cp #143
-        jr c, 4$                    ; load the next 4 palettes
+        jr c, 1$                    ; load the next 4 palettes
 
         ld a, #STATF_LYC
         ld (_STAT_REG), a
@@ -109,14 +110,14 @@ ISR_VECTOR(VECTOR_STAT, load_palettes)
 extern const hUGESong_t unreal_superhero2;
 
 const unsigned int sprite_palettes[] = {
-    RGB_BLACK, RGB_LIGHTGRAY,   RGB_BLACK,    RGB_WHITE,
-    RGB_BLACK, RGB(15,  0,  0), RGB_BLACK,    RGB_RED,
-    RGB_BLACK, RGB( 0, 15,  0), RGB_BLACK,    RGB_GREEN,
-    RGB_BLACK, RGB( 0,  0, 15), RGB_BLACK,    RGB_BLUE,
-    RGB_BLACK, RGB( 9,  0,  0), RGB_BLACK,    RGB_DARKRED,
-    RGB_BLACK, RGB(15, 15,  0), RGB_BLACK,    RGB_YELLOW,
-    RGB_BLACK, RGB( 0, 15, 15), RGB_BLACK,    RGB_CYAN,
-    RGB_BLACK, RGB( 9,  0,  9), RGB_BLACK,    RGB_PURPLE
+    RGB_WHITE  , RGB_LIGHTGRAY,   RGB_BLACK,    RGB_BLACK,
+    RGB_RED    , RGB(15,  0,  0), RGB_BLACK,    RGB_BLACK,
+    RGB_GREEN  , RGB( 0, 15,  0), RGB_BLACK,    RGB_BLACK,
+    RGB_BLUE   , RGB( 0,  0, 15), RGB_BLACK,    RGB_BLACK,
+    RGB_DARKRED, RGB( 9,  0,  0), RGB_BLACK,    RGB_BLACK,
+    RGB_YELLOW , RGB(15, 15,  0), RGB_BLACK,    RGB_BLACK,
+    RGB_CYAN   , RGB( 0, 15, 15), RGB_BLACK,    RGB_BLACK,
+    RGB_PURPLE , RGB( 9,  0,  9), RGB_BLACK,    RGB_BLACK
 };
 
 const uint8_t sin_table[] = {
@@ -133,12 +134,13 @@ const uint8_t sin_table[] = {
      25, 25, 25, 26, 26, 27, 27, 28, 28, 29
 };
 
-const uint8_t text[] = "HELLO, WORLD! :)  THIS SMALL TECH DEMO WAS WRITTEN WITH GBDK-2020! " \
-                       "THIS EXCELLENT \"UNREAL SUPERHERO\" MUSIC COVER WAS WRITTEN BY KABCORP. " \
-                       "HUGETRACKER SOUND DRIVER BY SUPERDISK. " \
-                       "WALLPAPER WITH THE CHARACTER FROM \"ALIEN HOMINID\" WAS DRAWN BY THE UNKNOWN AUTHOR. " \
-                       "PRESS D-PAD TO SCROLL THIS PICTURE UP AND DOWN. IT IS A 2320-COLOR MULTICOLOR IMAGE. " \
-                       "ENJOY. THANK YOU FOR READING THIS. TOXA.            ";
+const uint8_t text[] = "Hello, world! :)  This small tech demo was written using GBDK-2020! " \
+                       "This excellent \"UNREAL SUPERHERO\" music cover was written by KABCORP. " \
+                       "hUGETracker sound driver by SUPERDISK. " \
+                       "Font by DamienG. " \
+                       "Wallpaper with the character from the \"ALIEN HOMINID\" was drawn by the unknown author. " \
+                       "Press D-PAD to scroll this picture UP and DOWN. This is a 2320-color multicolor image. " \
+                       "Enjoy. Thank you for reading this. TOXA.            ";
 const uint8_t * text_ptr = text;
 
 // main funxction

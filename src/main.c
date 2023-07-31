@@ -45,7 +45,7 @@ __asm
         and #0x20                   ; if odd then start from 4-th palette; offset == 32
         or  #0x80                   ; set auto-increment
 
-        ld hl,#_BCPS_REG
+        ld hl, #_BCPS_REG
         ld (hl+), a                 ; HL now points to BCPD
 
         .rept (8*4)                 ; read and set the the colors that come from previous lines
@@ -60,16 +60,14 @@ __asm
         jr z, 0$                    ; wait for mode 3
 
         ld a, #STATF_MODE00
-        ld (_STAT_REG), a
-        xor a
-        ld (_IF_REG), a
+        ldh (_STAT_REG), a
 
 1$:
         pop de                      ; preload the first two colors
         pop bc
 
         xor a
-        ld (_IF_REG), a
+        ldh (_IF_REG), a
         halt                        ; wait for mode 0
 
         ld (hl), e                  ; set the first two colors
@@ -88,15 +86,13 @@ __asm
         jr c, 1$                    ; load the next 4 palettes
 
         ld a, #STATF_LYC
-        ld (_STAT_REG), a
+        ldh (_STAT_REG), a
         xor a
-        ld (_IF_REG), a
+        ldh (_IF_REG), a
 
-        ld hl, #_SP_SAVE            ; restore SP
-        ld a, (hl+)
-        ld h, (hl)
-        ld l, a
-        ld sp, hl
+        ld sp, #_SP_SAVE
+        pop hl
+        ld sp, hl                   ; restore SP
 
         pop de
         pop bc
@@ -144,7 +140,7 @@ const uint8_t text[] = "Hello, world! :)  This small tech demo was written using
 const uint8_t * text_ptr = text;
 
 // main funxction
-_Noreturn void main(void) {
+NORETURN void main(void) {
     cpu_fast();
 
     wait_vbl_done();
@@ -214,8 +210,7 @@ _Noreturn void main(void) {
 
         // move scroll
         if (display_head != display_tail) {
-            static uint8_t i;
-            for (i = display_tail; i != display_head; ) {
+            for (uint8_t i = display_tail; i != display_head; ) {
                 OAM_item_t * OAM_item = shadow_OAM + display[i = (i + 1) & QUEUE_MASK];
                 if (--OAM_item->x) {
                     OAM_item->y = sin_table[OAM_item->x];
@@ -234,6 +229,6 @@ _Noreturn void main(void) {
             if (SCY_REG < (uint8_t)(((11 + 10) * 8) - 144)) SCY_REG++;
         }
 
-        wait_vbl_done();
+        vsync();
     }
 }

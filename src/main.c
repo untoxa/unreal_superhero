@@ -18,6 +18,9 @@ INCBIN_EXTERN(picture_palette)
 
 INCBIN_EXTERN(font_tiles)
 
+#define UPPER_PICTURE_MAP_HEIGHT 11
+#define LOWER_PICTURE_MAP_HEIGHT 10
+
 static uint16_t SP_SAVE;
 void load_palettes(void) NAKED {
 __asm
@@ -116,18 +119,20 @@ const unsigned int sprite_palettes[] = {
     RGB_PURPLE , RGB( 9,  0,  9), RGB_BLACK,    RGB_BLACK
 };
 
-const uint8_t sin_table[] = {
-     84, 85, 87, 89, 91, 93, 94, 96, 98,100,101,103,105,106,108,110,
-    111,113,115,116,118,119,121,122,123,125,126,127,128,130,131,132,
-    133,134,135,136,137,137,138,139,140,140,141,141,142,142,143,143,
-    143,143,143,143,144,143,143,143,143,143,143,142,142,141,141,140,
-    140,139,138,137,137,136,135,134,133,132,131,130,128,127,126,125,
-    123,122,121,119,118,116,115,113,111,110,108,106,105,103,101,100,
-     98, 96, 94, 93, 91, 89, 87, 85, 84, 83, 81, 79, 77, 75, 74, 72,
-     70, 68, 67, 65, 63, 62, 60, 58, 57, 55, 53, 52, 50, 49, 47, 46,
-     45, 43, 42, 41, 40, 38, 37, 36, 35, 34, 33, 32, 31, 31, 30, 29,
-     28, 28, 27, 27, 26, 26, 25, 25, 25, 25, 25, 25, 24, 25, 25, 25,
-     25, 25, 25, 26, 26, 27, 27, 28, 28, 29
+#define SPRITE_START_POSITION (DEVICE_SPRITE_PX_OFFSET_X + DEVICE_SCREEN_PX_WIDTH)
+
+const uint8_t sin_table[SPRITE_START_POSITION + 1] = {
+    84,  85,  87,  89,  91,  93,  94,  96,  98,  100, 101, 103, 105, 106, 108, 110,
+    111, 113, 115, 116, 118, 119, 121, 122, 123, 125, 126, 127, 128, 130, 131, 132,
+    133, 134, 135, 136, 137, 137, 138, 139, 140, 140, 141, 141, 142, 142, 143, 143,
+    143, 143, 143, 143, 144, 143, 143, 143, 143, 143, 143, 142, 142, 141, 141, 140,
+    140, 139, 138, 137, 137, 136, 135, 134, 133, 132, 131, 130, 128, 127, 126, 125,
+    123, 122, 121, 119, 118, 116, 115, 113, 111, 110, 108, 106, 105, 103, 101, 100,
+    98,  96,  94,  93,  91,  89,  87,  85,  84,  83,  81,  79,  77,  75,  74,  72,
+    70,  68,  67,  65,  63,  62,  60,  58,  57,  55,  53,  52,  50,  49,  47,  46,
+    45,  43,  42,  41,  40,  38,  37,  36,  35,  34,  33,  32,  31,  31,  30,  29,
+    28,  28,  27,  27,  26,  26,  25,  25,  25,  25,  25,  25,  24,  25,  25,  25,
+    25,  25,  25,  26,  26,  27,  27,  28,  28
 };
 
 const uint8_t text[] = "Hello, world! :)  This small tech demo was written using GBDK-2020! " \
@@ -143,12 +148,13 @@ const uint8_t * text_ptr = text;
 NORETURN void main(void) {
     cpu_fast();
 
-    wait_vbl_done();
+    vsync();
     DISPLAY_OFF;
 
-    for (uint8_t i = 1; i < 21; i++) free_id(i);
+    // algo can allocate up to QUEUE_LEN-1 sprites
+    for (uint8_t i = 1; i != QUEUE_LEN; i++) free_id(i);
 
-    NR52_REG = 0x80;
+    NR52_REG = AUDENA_ON;
     NR51_REG = 0xFF;
     NR50_REG = 0x77;
     CRITICAL {
@@ -157,8 +163,8 @@ NORETURN void main(void) {
 
         LYC_REG = 152;
         STAT_REG = STATF_LYC;
-        set_interrupts(IE_REG | VBL_IFLAG | LCD_IFLAG);
     }
+    set_interrupts(IE_REG | LCD_IFLAG);
     // load sprite palettes;
     set_sprite_palette(0, 8, sprite_palettes);
 
@@ -167,18 +173,18 @@ NORETURN void main(void) {
 
     // load picture tiles and map
     set_bkg_data(0, INCBIN_SIZE(upper_picture_tiles) >> 4, upper_picture_tiles);
-    set_bkg_tiles(0, 0, 20, 11, upper_picture_map);
+    set_bkg_tiles(0, 0, 20, UPPER_PICTURE_MAP_HEIGHT, upper_picture_map);
     VBK_REG = VBK_BANK_1;
-    set_bkg_tiles(0, 0, 20, 11, upper_picture_attr);
+    set_bkg_tiles(0, 0, 20, UPPER_PICTURE_MAP_HEIGHT, upper_picture_attr);
     set_bkg_data(0, INCBIN_SIZE(lower_picture_tiles) >> 4, lower_picture_tiles);
-    set_bkg_tiles(0, 11, 20, 10, lower_picture_attr);
+    set_bkg_tiles(0, UPPER_PICTURE_MAP_HEIGHT, 20, LOWER_PICTURE_MAP_HEIGHT, lower_picture_attr);
     VBK_REG = VBK_BANK_0;
-    set_bkg_tiles(0, 11, 20, 10, lower_picture_map);
+    set_bkg_tiles(0, UPPER_PICTURE_MAP_HEIGHT, 20, LOWER_PICTURE_MAP_HEIGHT, lower_picture_map);
 
     SHOW_BKG;
     SHOW_SPRITES;
 
-    wait_vbl_done();
+    vsync();
     DISPLAY_ON;
 
     static uint8_t tick = 0;
@@ -199,8 +205,8 @@ NORETURN void main(void) {
                     if (id = alloc_id()) {
                         OAM_item_t * OAM_item = shadow_OAM + add_to_display(id - 1);
                         OAM_item->tile = ch;
-                        OAM_item->y = sin_table[168];
-                        OAM_item->x = 168;
+                        OAM_item->y = sin_table[SPRITE_START_POSITION];
+                        OAM_item->x = (uint8_t)(SPRITE_START_POSITION);
                         OAM_item->prop = 0;
                     }
                     break;
@@ -211,7 +217,7 @@ NORETURN void main(void) {
         // move scroll
         if (display_head != display_tail) {
             for (uint8_t i = display_tail; i != display_head; ) {
-                OAM_item_t * OAM_item = shadow_OAM + display[i = (i + 1) & QUEUE_MASK];
+                OAM_item_t * OAM_item = shadow_OAM + display[i = ((i + 1) & QUEUE_MASK)];
                 if (--OAM_item->x) {
                     OAM_item->y = sin_table[OAM_item->x];
                 } else {
@@ -226,7 +232,7 @@ NORETURN void main(void) {
         if (joy & J_UP) {
             if (SCY_REG) SCY_REG--;
         } else if (joy & J_DOWN) {
-            if (SCY_REG < (uint8_t)(((11 + 10) * 8) - 144)) SCY_REG++;
+            if (SCY_REG < (uint8_t)(((UPPER_PICTURE_MAP_HEIGHT + LOWER_PICTURE_MAP_HEIGHT) * 8) - DEVICE_SCREEN_PX_HEIGHT)) SCY_REG++;
         }
 
         vsync();

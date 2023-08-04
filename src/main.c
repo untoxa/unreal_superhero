@@ -4,24 +4,19 @@
 #include <gb/isr.h>
 
 #include "hUGEDriver.h"
+#include "gbc_hicolor.h"
 #include "queues.h"
 
-INCBIN_EXTERN(upper_picture_tiles)
-INCBIN_EXTERN(upper_picture_map)
-INCBIN_EXTERN(upper_picture_attr)
-
-INCBIN_EXTERN(lower_picture_tiles)
-INCBIN_EXTERN(lower_picture_map)
-INCBIN_EXTERN(lower_picture_attr)
-
-INCBIN_EXTERN(picture_palette)
+#include "unreal_background.h"
+#include "font8x8.h"
 
 INCBIN_EXTERN(font_tiles)
 
-#define UPPER_PICTURE_MAP_HEIGHT 11
-#define LOWER_PICTURE_MAP_HEIGHT 10
+#define MIN(A,B) ((A)<(B)?(A):(B))
 
 static uint16_t SP_SAVE;
+static uint8_t * p_hicolor_palettes;
+static uint8_t p_hicolor_height;
 void load_palettes(void) NAKED {
 __asm
         push af
@@ -31,7 +26,11 @@ __asm
 
         ld (_SP_SAVE), sp           ; save SP
 
-        ld de, #_picture_palette    ; load picture palettes address
+        ld hl, #_p_hicolor_palettes ; load address of picture palettes buffer
+        ld a, (hl+)
+        ld d, (hl)
+        ld e, a
+
         ldh a, (_SCY_REG)
         swap a
         ld l, a
@@ -84,8 +83,10 @@ __asm
             ld (hl), d
         .endm
 
+        ld a, (_p_hicolor_height)
+        ld c, a
         ldh a, (_LY_REG)
-        cp #143
+        cp c
         jr c, 1$                    ; load the next 4 palettes
 
         ld a, #STATF_LYC
@@ -144,6 +145,22 @@ const uint8_t text[] = "Hello, world! :)  This small tech demo was written using
                        "Enjoy. Thank you for reading this. TOXA.            ";
 const uint8_t * text_ptr = text;
 
+uint8_t scroll_limit;
+
+inline void load_image_data(const hicolor_data * p_hicolor){
+    p_hicolor_palettes = p_hicolor->p_palette;
+    p_hicolor_height = (p_hicolor->height_in_tiles > DEVICE_SCREEN_HEIGHT) ? (DEVICE_SCREEN_PX_HEIGHT - 1) : ((p_hicolor->height_in_tiles << 3) - 1);
+    VBK_REG = VBK_BANK_0;
+    set_bkg_data(0u, MIN(p_hicolor->tile_count, 256), p_hicolor->p_tiles);
+    set_bkg_tiles(0u, 0u, DEVICE_SCREEN_WIDTH, p_hicolor->height_in_tiles, p_hicolor->p_map);
+    VBK_REG = VBK_BANK_1;
+    if (p_hicolor->tile_count > 256) set_bkg_data(0u, (p_hicolor->tile_count - 256), p_hicolor->p_tiles + (256 * 16));
+    set_bkg_tiles(0, 0, DEVICE_SCREEN_WIDTH, p_hicolor->height_in_tiles, p_hicolor->p_attribute_map);
+    VBK_REG = VBK_BANK_0;
+
+    scroll_limit = ((p_hicolor->height_in_tiles * 8u) > DEVICE_SCREEN_PX_HEIGHT) ? ((p_hicolor->height_in_tiles * 8u) - DEVICE_SCREEN_PX_HEIGHT) : 0;
+}
+
 // main funxction
 NORETURN void main(void) {
     cpu_fast();
@@ -169,17 +186,10 @@ NORETURN void main(void) {
     set_sprite_palette(0, 8, sprite_palettes);
 
     // load font tiles
-    set_sprite_data(0x20, INCBIN_SIZE(font_tiles) >> 4, font_tiles);
+    set_sprite_data(0x20, font8x8_TILE_COUNT, font8x8_tiles);
 
-    // load picture tiles and map
-    set_bkg_data(0, INCBIN_SIZE(upper_picture_tiles) >> 4, upper_picture_tiles);
-    set_bkg_tiles(0, 0, 20, UPPER_PICTURE_MAP_HEIGHT, upper_picture_map);
-    VBK_REG = VBK_BANK_1;
-    set_bkg_tiles(0, 0, 20, UPPER_PICTURE_MAP_HEIGHT, upper_picture_attr);
-    set_bkg_data(0, INCBIN_SIZE(lower_picture_tiles) >> 4, lower_picture_tiles);
-    set_bkg_tiles(0, UPPER_PICTURE_MAP_HEIGHT, 20, LOWER_PICTURE_MAP_HEIGHT, lower_picture_attr);
-    VBK_REG = VBK_BANK_0;
-    set_bkg_tiles(0, UPPER_PICTURE_MAP_HEIGHT, 20, LOWER_PICTURE_MAP_HEIGHT, lower_picture_map);
+    // Copy address of palette into local var used by HiColor ISR
+    load_image_data(&unreal_background_data);
 
     SHOW_BKG;
     SHOW_SPRITES;
@@ -232,7 +242,7 @@ NORETURN void main(void) {
         if (joy & J_UP) {
             if (SCY_REG) SCY_REG--;
         } else if (joy & J_DOWN) {
-            if (SCY_REG < (uint8_t)(((UPPER_PICTURE_MAP_HEIGHT + LOWER_PICTURE_MAP_HEIGHT) * 8) - DEVICE_SCREEN_PX_HEIGHT)) SCY_REG++;
+            if (SCY_REG < scroll_limit) SCY_REG++;
         }
 
         vsync();

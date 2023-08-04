@@ -1,1 +1,1 @@
---type=1 --csource
+--type=3 -L=2 -R=2 --csource

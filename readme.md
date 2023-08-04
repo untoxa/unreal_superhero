@@ -1,4 +1,4 @@
-tiny multicolor demo with music and vertical scroll
+Tiny multicolor demo with music and vertical scroll
 ---------------------------------------------------
 
 Written for the GBDK-2020 v4.1.1 and above.

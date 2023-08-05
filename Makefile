@@ -127,7 +127,7 @@ $(OBJDIR)/%.c:	$(RESDIR)/gfx/$(PLAT)/backgrounds/%.png $$(wildcard $(RESDIR)/gfx
 
 .SECONDEXPANSION:
 $(OBJDIR)/%.c:	$(RESDIR)/gfx/$(PLAT)/hicolor/%.png $$(wildcard $(RESDIR)/gfx/$(PLAT)/hicolor/%.png.meta)
-	utils/png2hicolorgb.exe $< -o=$@ `cat <$<.meta 2>/dev/null`
+	utils/png2hicolorgb.exe $< -o $@ `cat <$<.meta 2>/dev/null`
 
 
 #always rebuild

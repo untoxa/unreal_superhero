@@ -11,6 +11,7 @@ GBCPU = sm83
 
 LCC = $(GBDK_HOME)bin/lcc
 PNG2ASSET = $(GBDK_HOME)bin/png2asset
+PNG2HICOLORGB = $(GBDK_HOME)bin/png2hicolorgb
 
 # Set platforms to build here, spaced separated. (These are in the separate Makefile.targets)
 # They can also be built/cleaned individually: "make gg" and "make gg-clean"
@@ -127,7 +128,7 @@ $(OBJDIR)/%.c:	$(RESDIR)/gfx/$(PLAT)/backgrounds/%.png $$(wildcard $(RESDIR)/gfx
 
 .SECONDEXPANSION:
 $(OBJDIR)/%.c:	$(RESDIR)/gfx/$(PLAT)/hicolor/%.png $$(wildcard $(RESDIR)/gfx/$(PLAT)/hicolor/%.png.meta)
-	utils/png2hicolorgb.exe $< -o $@ `cat <$<.meta 2>/dev/null`
+	$(PNG2HICOLORGB) $< -o $@ `cat <$<.meta 2>/dev/null`
 
 
 #always rebuild
